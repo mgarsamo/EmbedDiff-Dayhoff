@@ -104,10 +104,24 @@ The output is a final FASTA file of decoded protein sequences, suitable for down
 
 ---
 
-### **Step 7d: Local BLAST Validation**
-- Sequences are aligned against the original real dataset using BLAST+.
-- A summary CSV is created with identity scores, E-values, and alignment stats.
-- This confirms whether sequences are evolutionarily grounded.
+### 🔍 Step 7d: Local BLAST Validation
+
+Generated sequences are validated by aligning them against a **locally downloaded SwissProt database** using the `blastp` tool from **NCBI BLAST+**.
+
+- Uses: `blastp` from the BLAST+ suite
+- Target database: `SwissProt` (downloaded locally in FASTA format)
+- Input: Decoded sequences (`decoded_embeddiff.fasta`)
+- Output: A CSV summary with:
+  - **Percent identity**
+  - **E-value**
+  - **Bit score**
+  - **Alignment length**
+  - **Matched SwissProt accession/description**
+
+This step confirms that generated sequences are **evolutionarily meaningful** by evaluating their similarity to curated natural proteins.
+
+> 📁 Output example: `data/blast_results/blast_summary_local.csv`
+
 
 ---
 
