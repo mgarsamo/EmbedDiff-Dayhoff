@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.npy
+*.pt
+*.log
+*.DS_Store
+.venv/
+env/
+.esmfold*
+checkpoints/
+data/blast_results/
+data/decoded_*.fasta
+embeddings/
+figures/embeddiff_summary_report.html
