@@ -90,8 +90,8 @@ The output is a final FASTA file of decoded protein sequences, suitable for down
 
 ### **Step 7b: Cosine Similarity Histogram**
 - Pairwise cosine distances are computed between:
-  - Real vs. real sequences
-  - Real vs. generated sequences
+  - Natural vs. Natural sequences
+  - Natural vs. generated sequences
   - Generated vs. generated sequences
 - This helps evaluate diversity and proximity to known protein embeddings.
 
