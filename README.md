@@ -101,14 +101,15 @@ The output is a final FASTA file of decoded protein sequences, suitable for down
 
 Each decoded protein sequence is evaluated using two key metrics:
 
-- **Shannon Entropy**: Quantifies amino acid diversity across the sequence.  
-  - Higher entropy values indicate more diverse residue composition, which is often associated with novel and realistic sequences.  
-  - Lower entropy values may indicate repetitive or biologically implausible sequences.
+- **Shannon Entropy**: Quantifies amino acid diversity across the sequence.
+  - Values typically range from **~1.0 (low diversity)** to **~4.3 (maximum diversity)**.
+  - **Higher entropy values (≥ 3.5)** suggest diverse, non-repetitive sequences.
+  - **Lower values (< 2.5)** may indicate low-complexity or biologically implausible repeats.
 
-- **Sequence Identity (via BLAST)**: Measures similarity to known natural proteins.  
-  - This ensures generated sequences are evolutionarily plausible while avoiding exact duplication of existing sequences.
+- **Sequence Identity (via BLAST)**: Measures similarity to known natural proteins.
+  - This helps ensure the generated sequences remain evolutionarily grounded while still being novel.
 
-Sequences are filtered based on configurable entropy and identity thresholds to strike a balance between **novelty** and **biological relevance**. Only sequences within the desired range are retained for downstream analysis.
+Sequences are filtered based on configurable entropy and identity thresholds to retain those with **balanced novelty and biological relevance**. Only sequences within the target range are included in downstream analysis and structural validation.
 
 
 ---
