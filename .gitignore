@@ -7,8 +7,8 @@ __pycache__/
 .venv/
 env/
 .esmfold*
-checkpoints/
+#checkpoints/
 data/blast_results/
 data/decoded_*.fasta
-embeddings/
+#embeddings/
 figures/embeddiff_summary_report.html
