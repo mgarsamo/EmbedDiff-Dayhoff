@@ -97,10 +97,19 @@ The output is a final FASTA file of decoded protein sequences, suitable for down
 
 ---
 
-### **Step 7c: Entropy vs. Identity Filtering**
-- Each decoded sequence is filtered based on its entropy and sequence identity (BLAST).
-- High entropy implies greater diversity; identity measures similarity to known proteins.
-- Sequences outside the desired range are discarded.
+### 🔍 Step 7c: Entropy vs. Identity Filtering
+
+Each decoded protein sequence is evaluated using two key metrics:
+
+- **Shannon Entropy**: Quantifies amino acid diversity across the sequence.  
+  - Higher entropy values indicate more diverse residue composition, which is often associated with novel and realistic sequences.  
+  - Lower entropy values may indicate repetitive or biologically implausible sequences.
+
+- **Sequence Identity (via BLAST)**: Measures similarity to known natural proteins.  
+  - This ensures generated sequences are evolutionarily plausible while avoiding exact duplication of existing sequences.
+
+Sequences are filtered based on configurable entropy and identity thresholds to strike a balance between **novelty** and **biological relevance**. Only sequences within the desired range are retained for downstream analysis.
+
 
 ---
 
