@@ -142,6 +142,35 @@ This step confirms that generated sequences are **evolutionarily meaningful** by
 
 ---
 
+### 🧪 Optional: Structural Validation with ESMFold or AlphaFold2
+
+Although not part of the core EmbedDiff pipeline, the generated sequences can optionally be assessed for structural plausibility using modern protein structure prediction tools:
+
+#### 🔬 [ESMFold](https://github.com/facebookresearch/esm)
+- A fast, accurate structure predictor from Meta AI, built on the ESM2 language model.
+- Accepts a FASTA file of protein sequences as input and returns predicted 3D structures with per-residue confidence scores (pLDDT).
+- Ideal for rapid, large-scale folding of EmbedDiff-generated sequences.
+
+#### 🧬 [AlphaFold2](https://github.com/deepmind/alphafold)
+- The state-of-the-art method from DeepMind for protein structure prediction.
+- Provides highly accurate structural models and can be run locally or via cloud platforms.
+- More computationally intensive, but offers best-in-class accuracy.
+
+---
+
+#### 🧯 Output from Structural Prediction Tools
+- **3D Models** (`.pdb`) for each sequence.
+- **Confidence Scores** (e.g. `pLDDT` or `PAE`) per residue.
+- **Optional Visualizations** using tools like:
+  - [`py3Dmol`](https://github.com/3dmol/3Dmol.js)
+  - [`nglview`](https://github.com/nglviewer/nglview)
+
+---
+
+> 📌 These tools provide additional confidence that the generated sequences are likely to fold into stable and ordered protein structures.
+
+---
+
 ## 📂 Project Structure
 EmbedDiff/
 ├── README.md                       # 📘 Project overview and documentation
