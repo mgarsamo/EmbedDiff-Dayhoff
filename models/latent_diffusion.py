@@ -17,18 +17,33 @@ class MLPNoisePredictor(nn.Module):
         )
 
     def forward(self, x, t):
-        t = t.float().unsqueeze(1) / 30  # normalize timestep
+        # Proper timestep embedding - normalize to [0, 1] range
+        t = t.float().unsqueeze(1) / (self.timesteps - 1) if hasattr(self, 'timesteps') else t.float().unsqueeze(1) / 1000
         x = torch.cat([x, t], dim=1)
         return self.net(x)
 
 
 class GaussianDiffusion:
-    def __init__(self, model, timesteps=30):
+    def __init__(self, model, timesteps=1000):
         self.model = model
         self.timesteps = timesteps
-        self.betas = torch.linspace(1e-5, 1e-3, timesteps)
+        # Better noise schedule: cosine schedule for smoother diffusion
+        self.betas = self._cosine_beta_schedule(timesteps)
         self.alphas = 1.0 - self.betas
         self.alpha_hats = torch.cumprod(self.alphas, dim=0)
+        
+        # Set timesteps in model for proper normalization
+        if hasattr(model, 'timesteps'):
+            model.timesteps = timesteps
+    
+    def _cosine_beta_schedule(self, timesteps):
+        """Cosine noise schedule for better diffusion process"""
+        steps = timesteps + 1
+        x = torch.linspace(0, timesteps, steps)
+        alphas_cumprod = torch.cos(((x / timesteps) + 0.008) / 1.008 * torch.pi * 0.5) ** 2
+        alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
+        betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
+        return torch.clip(betas, 0.0001, 0.9999)
 
     def q_sample(self, x_start, t, noise=None):
         if noise is None:

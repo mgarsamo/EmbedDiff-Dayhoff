@@ -1,228 +1,435 @@
-# 🧬 EmbedDiff: Latent Diffusion for Protein Sequence Generation
 
-**EmbedDiff** is a protein sequence generation pipeline that combines large-scale pretrained protein embeddings with a latent diffusion model to explore and sample from the vast protein sequence space. It generates novel sequences that preserve semantic and evolutionary properties without relying on explicit structural data, and evaluates them through a suite of biologically meaningful analyses.
 
----
+# 🧬 EmbedDiff-Dayhoff: Protein Sequence Generation via Latent Diffusion
 
-## 🔍 What Is EmbedDiff?
+A comprehensive implementation of the EmbedDiff pipeline for generating novel protein sequences using Dayhoff embeddings and latent diffusion models.
 
-EmbedDiff uses ESM2 (Evolutionary Scale Modeling v2) to project protein sequences into a high-dimensional latent space rich in evolutionary and functional priors. A denoising latent diffusion model is trained to learn the distribution of these embeddings and generate new ones from random noise. These latent vectors represent plausible protein-like states and are decoded into sequences using a Transformer decoder that blends both stochastic and reference-guided sampling.
+## 🔬 About This Study
 
-The pipeline concludes with sequence validation via entropy, cosine similarity, BLAST alignment, and embedding visualization (t-SNE, MDS). A final HTML report presents all figures and results in an interactive format.
+**EmbedDiff-Dayhoff** is an **ablation study** that extends the original [EmbedDiff pipeline](https://github.com/mgarsamo/EmbedDiff) by swapping the embedding backbone from **ESM-2** to **Microsoft Dayhoff Atlas**. 
 
----
+This repository isolates the key question: **How do Dayhoff embeddings (trained on clustered UniRef) affect de novo sequence generation compared to the ESM-2 baseline?**
 
-## 📌 Pipeline Overview
+### 🔄 What's Different in This Ablation?
 
-The full EmbedDiff pipeline is modular and proceeds through the following stages:
+- **Embedding Backbone**: ESM-2 → **Dayhoff Atlas** (default: `microsoft/Dayhoff-3b-UR90`)
+- **End-to-End Dayhoff Scripts**: All pipeline steps are Dayhoff-specific (`*_dayhoff.py`)
+- **Dimension-Agnostic**: Auto-detects embedding dimensions from saved `.npy` files
+- **Mamba Compatibility**: Handles Jamba/Mamba architecture with CPU support
 
-### **Step 1: Input Dataset**
-- Format: A curated FASTA file of real protein sequences (e.g., Thioredoxin reductases).
-- Used as the basis for learning a latent protein representation and decoder training.
+> 💾 **Model size**: `Dayhoff-3b-UR90` is ~12 GB (3 shards). Use `--batch_size` conservatively on CPU/MPS.  
+> ⚙️ **Mamba kernels**: Loaded with `use_mamba_kernels=False` to avoid CUDA-only kernel warnings on Mac.
 
----
+### 📚 Related Work
 
-### **Step 2a: ESM2 Embedding**
-- The curated sequences are embedded using the `esm2_t33_650M_UR50D` model.
-- This transforms each protein into a 1280-dimensional latent vector.
-- These embeddings capture functional and evolutionary constraints without any structural input.
-
----
-
-### **Step 2b: t-SNE of Real Embeddings**
-- t-SNE is applied to the real ESM2 embeddings to visualize the structure of protein space.
-- Serves as a baseline to later compare generated (synthetic) embeddings.
+- **Original EmbedDiff**: [ESM-2 + Latent Diffusion Pipeline](https://github.com/mgarsamo/EmbedDiff)
+- **This Study**: Dayhoff + Latent Diffusion Pipeline (current repository)
+- **Comparison**: Evaluate embedding model effects on protein generation quality
 
 ---
 
-### **Step 3: Train EmbedDiff Latent Diffusion Model**
-- A denoising MLP learns to reverse the process of adding Gaussian noise to real ESM2 embeddings.
-- Trained using a sequence of time steps (e.g., 30 steps), the model gradually denoises noisy embeddings back toward the real manifold.
-- This enables sampling realistic embeddings from noise.
+## 📋 Overview
 
----
+This repository implements a complete protein generation pipeline that:
+1. **Generates protein embeddings** using the Microsoft Dayhoff protein language model
+2. **Trains a latent diffusion model** to learn the distribution of protein embeddings
+3. **Samples synthetic embeddings** from the learned distribution
+4. **Reconstructs protein sequences** using a transformer decoder
+5. **Evaluates generated sequences** through comprehensive analysis and visualization
 
-### **Step 4: Sample Synthetic Embeddings**
-- Starting from pure Gaussian noise, the trained diffusion model is used to generate new latent vectors that resemble real protein embeddings.
-- These latent samples are biologically plausible but unseen — representing de novo candidates.
+## 🚀 Key Features
 
----
+- **Dayhoff Embeddings**: Uses `microsoft/Dayhoff-3b-UR90` for high-quality protein representations
+- **Latent Diffusion**: Implements cosine noise scheduling with improved normalization
+- **Transformer Decoder**: Reconstructs sequences from embeddings with high fidelity
+- **Comprehensive Analysis**: t-SNE visualization, similarity analysis, quality metrics, and BLAST evaluation
+- **Professional Reporting**: Generates HTML reports with all visualizations and results
 
-### **Step 5a: Build Decoder Dataset**
-- Real ESM2 embeddings are paired with their corresponding amino acid sequences.
-- This dataset is used to train a decoder to translate from embedding → sequence.
+## 📊 Results Summary
 
----
+Our pipeline successfully:
+- ✅ **Generated 240 high-quality synthetic protein sequences**
+- ✅ **Achieved 32-68% sequence identity** (most around 55-65%)
+- ✅ **Trained diffusion model** with cosine noise schedule and [-1,1] normalization
+- ✅ **Trained transformer decoder** with 15% loss improvement over 34 epochs
+- ✅ **Maintained biological plausibility** through domain-aware embedding generation
 
-### **Step 5b: Train Transformer Decoder**
-- A Transformer model is trained to autoregressively generate amino acid sequences from input embeddings.
-- Label smoothing and entropy filtering are used to improve sequence diversity and biological plausibility.
-- Optionally, ESM2 logit distillation is applied to align predictions with natural residue distributions.
+## 📋 View Complete Results
 
----
+**📊 [View Full HTML Report](embeddiff_dayhoff_summary_report.html)** - Comprehensive analysis with all 13 figures, metrics, and downloadable data
 
-### 🔄 Step 6: Decode Synthetic Sequences
+The HTML report contains:
+- All generated visualizations and analysis plots
+- Performance metrics and training curves
+- Sequence quality assessments and BLAST results
+- Downloadable FASTA files and CSV data
+- Professional presentation of all pipeline outputs
 
-The synthetic embeddings from Step 4 are decoded into amino acid sequences using a **hybrid decoding strategy** that balances biological realism with diversity.
+## 🏗️ Architecture
 
-By default:
-- **40%** of amino acid positions are generated **stochastically**, sampled from the decoder’s output distribution.
-- **60%** are **reference-guided**, biased toward residues from the closest matching natural sequence.
+```
+Real Protein Sequences → Dayhoff Embeddings → Latent Diffusion Model → Synthetic Embeddings → Transformer Decoder → Novel Protein Sequences
+```
 
-This configuration is empirically tuned to produce sequences with approximately **50–60% sequence identity** to known proteins—striking a practical balance between novelty and plausibility.
+### Core Components
 
-#### 💡 Modular and Adjustable
-This decoding step is fully configurable:
-- Setting the stochastic ratio to **100%** yields **fully de novo sequences**, maximizing novelty but potentially reducing identity.
-- Lower stochastic ratios (e.g., **20–30%**) increase similarity to natural proteins.
-- The ratio can be adjusted using a configuration flag in the decoding script.
+1. **Dayhoff Embedder** (`utils/dayhoff_embedder.py`)
+   - Generates 1280-dimensional embeddings using Microsoft's Dayhoff-3B model
+   - Handles Jamba/Mamba architecture with CPU compatibility
+   - Supports batch processing and custom device selection
 
-The output is a final FASTA file of decoded protein sequences, suitable for downstream validation or structural modeling.
+2. **Latent Diffusion Model** (`models/latent_diffusion.py`)
+   - MLP-based noise predictor with dynamic timestep scaling
+   - Cosine beta schedule for smooth noise addition
+   - Configurable timesteps (default: 1000) and learning parameters
 
+3. **Transformer Decoder** (`models/decoder_transformer.py`)
+   - 4-layer transformer architecture with 512 embedding dimensions
+   - Trained to reconstruct protein sequences from embeddings
+   - Early stopping and model checkpointing
 
----
+## 📁 Repository Structure
 
-### **Step 7a: t-SNE Overlay**
-- A combined t-SNE plot compares the distribution of real and generated embeddings.
-- Useful for assessing whether synthetic proteins fall within plausible latent regions.
-
----
-
-### **Step 7b: Cosine Similarity Histogram**
-- Pairwise cosine distances are computed between:
-  - Natural vs. Natural sequences
-  - Natural vs. generated sequences
-  - Generated vs. generated sequences
-- This helps evaluate diversity and proximity to known protein embeddings.
-
----
-
-### 🔍 Step 7c: Entropy vs. Identity Filtering
-
-Each decoded protein sequence is evaluated using two key metrics:
-
-- **Shannon Entropy**: Quantifies amino acid diversity across the sequence.
-  - Values typically range from **~1.0 (low diversity)** to **~4.3 (maximum diversity)**.
-  - **Higher entropy values (≥ 3.5)** suggest diverse, non-repetitive sequences.
-  - **Lower values (< 2.5)** may indicate low-complexity or biologically implausible repeats.
-
-- **Sequence Identity (via BLAST)**: Measures similarity to known natural proteins.
-  - This helps ensure the generated sequences remain evolutionarily grounded while still being novel.
-
-Sequences are filtered based on configurable entropy and identity thresholds to retain those with **balanced novelty and biological relevance**. Only sequences within the target range are included in downstream analysis and structural validation.
-
-
----
-
-### 🔍 Step 7d: Local BLAST Validation
-
-Generated sequences are validated by aligning them against a **locally downloaded SwissProt database** using the `blastp` tool from **NCBI BLAST+**.
-
-- Uses: `blastp` from the BLAST+ suite
-- Target database: `SwissProt` (downloaded locally in FASTA format)
-- Input: Decoded sequences (`decoded_embeddiff.fasta`)
-- Output: A CSV summary with:
-  - **Percent identity**
-  - **E-value**
-  - **Bit score**
-  - **Alignment length**
-  - **Matched SwissProt accession/description**
-
-This step confirms that generated sequences are **evolutionarily meaningful** by evaluating their similarity to curated natural proteins.
-
-> 📁 Output example: `data/blast_results/blast_summary_local.csv`
-
-
----
-
-### **Step 8: HTML Summary Report**
-- All visualizations, metrics, and links to output files are compiled into an interactive HTML report.
-- Includes cosine plots, entropy scatter, identity histograms, and t-SNE/MDS projections.
-- Allows easy inspection and sharing of results.
-
----
-
-### 🧪 Optional: Structural Validation with ESMFold or AlphaFold2
-
-Although not part of the core EmbedDiff pipeline, the generated sequences can optionally be assessed for structural plausibility using modern protein structure prediction tools:
-
-#### 🔬 [ESMFold](https://github.com/facebookresearch/esm)
-- A fast, accurate structure predictor from Meta AI, built on the ESM2 language model.
-- Accepts a FASTA file of protein sequences as input and returns predicted 3D structures with per-residue confidence scores (pLDDT).
-- Ideal for rapid, large-scale folding of EmbedDiff-generated sequences.
-
-#### 🧬 [AlphaFold2](https://github.com/deepmind/alphafold)
-- The state-of-the-art method from DeepMind for protein structure prediction.
-- Provides highly accurate structural models and can be run locally or via cloud platforms.
-- More computationally intensive, but offers best-in-class accuracy.
-
----
-
-#### 🧯 Output from Structural Prediction Tools
-- **3D Models** (`.pdb`) for each sequence.
-- **Confidence Scores** (e.g. `pLDDT` or `PAE`) per residue.
-- **Optional Visualizations** using tools like:
-  - [`py3Dmol`](https://github.com/3dmol/3Dmol.js)
-  - [`nglview`](https://github.com/nglviewer/nglview)
-
----
-
-> 📌 These tools provide additional confidence that the generated sequences are likely to fold into stable and ordered protein structures.
-
----
-
-## 📂 Project Structure
-EmbedDiff/
-├── README.md                       # 📘 Project overview and documentation
-├── .gitignore                     # 🛑 Files/folders to exclude from version control
-├── master.py                      # 🧠 Master pipeline script to run all steps
-├── requirements.txt               # 📦 Python dependencies for setting up environment
-├── environment.yml                # (Optional) Conda environment file (if using Conda)
-│
-├── data/                          # 📁 Input and output biological data
+```
+EmbedDiff_Dayhoff/
+├── data/                           # Input/output data files
 │   ├── curated_thioredoxin_reductase.fasta
-│   ├── decoded_embeddiff.fasta
-│   └── blast_results/
-│       └── blast_summary_local.csv
-│
-├── embeddings/                    # 📁 Latent vector representations
-│   ├── esm2_embeddings.npy
-│   └── sampled_embeddings.npy
-│
-├── figures/                       # 📁 All generated plots and report
-│   ├── fig2b_loss_train_val.png
-│   ├── fig3a_generated_tsne.png
-│   ├── fig5a_decoder_loss.png
-│   ├── fig5b_identity_histogram.png
-│   ├── fig5c_entropy_scatter.png
-│   ├── fig5d_all_histograms.png
-│   ├── fig_tsne_by_domain.png
-│   ├── fig5f_tsne_domain_overlay.png
-│   ├── fig5b_identity_scores.csv
-│   └── embeddiff_summary_report.html
-│
-├── scripts/                       # 📁 Core processing scripts
-│   ├── esm_embedder.py                    # Step 2a: Embed sequences with ESM2
-│   ├── first_tsne_embedding.py           # Step 2b: t-SNE of real embeddings
-│   ├── train_emeddiff.py                 # Step 3: Train latent diffusion model
-│   ├── sample_embeddings.py              # Step 4: Sample new embeddings
-│   ├── build_decoder_dataset.py          # Step 5a: Build decoder training set
-│   ├── train_transformer.py              # Step 5b: Train decoder
-│   ├── transformer_decode.py             # Step 6: Decode embeddings to sequences
-│   ├── plot_tsne_class_overlay.py        # Step 7a: t-SNE comparison
-│   ├── cosine_simlar_histo.py            # Step 7b: Cosine similarity plots
-│   ├── plot_entropy_identity.py          # Step 7c: Entropy vs. identity filter
-│   ├── blastlocal.py                     # Step 7d: Local BLAST alignment
-│   └── generate_html_report.py           # Step 8: Generate final HTML report
-│
-├── models/                       # 📁 ML model architectures
-│   ├── diffusion_mlp.py                  # EmbedDiff diffusion model
-│   └── decoder_transformer.py           # Transformer decoder
-│
-├── utils/                        # 📁 Utility and helper functions
-│   ├── amino_acid_utils.py               # Mapping functions for sequences
-│   └── metrics.py                        # Functions for loss, entropy, identity, etc.
-│
-└── checkpoints/                 # 📁 Model checkpoints (excluded via .gitignore)
-    ├── embeddiff_mlp.pth
-    └── decoder_transformer_best.pth
+│   ├── thioredoxin_reductase.fasta
+│   ├── decoded_embeddiff_dayhoff.fasta
+│   └── blast_results/              # BLAST analysis results
+├── embeddings/                     # Generated embeddings
+│   ├── dayhoff_embeddings.npy
+│   └── sampled_dayhoff_embeddings.npy
+├── figures/                        # All generated visualizations
+│   ├── fig_tsne_by_domain_dayhoff.png
+│   ├── fig2b_loss_dayhoff.png
+│   ├── fig3a_generated_tsne_dayhoff.png
+│   ├── fig5a_decoder_loss_dayhoff.png
+│   ├── fig5a_real_real_cosine_dayhoff.png
+│   ├── fig5b_gen_gen_cosine_dayhoff.png
+│   ├── fig5c_real_gen_cosine_dayhoff.png
+│   ├── fig5b_identity_histogram_dayhoff.png
+│   ├── fig5c_entropy_scatter_dayhoff.png
+│   ├── fig5d_all_histograms_dayhoff.png
+│   ├── fig5f_tsne_domain_overlay_dayhoff.png
+│   ├── logreg_per_class_recall_dayhoff.png
+│   └── logreg_confusion_matrix_dayhoff.png
+├── models/                         # Model architectures
+│   ├── latent_diffusion.py
+│   └── decoder_transformer.py
+├── scripts/                        # Pipeline execution scripts
+│   ├── run_embeddiff_pipeline_dayhoff.py
+│   ├── generate_dayhoff_embeddings.py
+│   ├── train_embeddiff_dayhoff.py
+│   ├── sample_embeddings_dayhoff.py
+│   ├── build_decoder_dataset_dayhoff.py
+│   ├── train_transformer_dayhoff.py
+│   ├── transformer_decode_dayhoff.py
+│   ├── plot_tsne_by_domain_dayhoff.py
+│   ├── plot_tsne_domain_overlay_dayhoff.py
+│   ├── cosine_similarity_dayhoff.py
+│   ├── plot_entropy_identity_dayhoff.py
+│   ├── plot_blast_identity_vs_evalue_dayhoff.py
+│   ├── blastlocal_dayhoff.py
+│   ├── generate_dayhoff_report.py
+│   └── train_transformer_dayhoff.py
+├── utils/                          # Utility functions
+│   ├── dayhoff_embedder.py
+│   └── esm_embedder.py
+├── checkpoints/                    # Trained model checkpoints
+├── notebooks/                      # Jupyter notebooks for exploration
+├── requirements.txt                # Python dependencies
+└── embeddiff_dayhoff_summary_report.html  # Comprehensive results report
+```
+
+## 🛠️ Installation
+
+### Prerequisites
+
+- Python 3.8+
+- PyTorch 2.3.1+
+- CUDA (optional, for GPU acceleration)
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/mgarsamo/EmbedDiff-Dayhoff.git
+   cd EmbedDiff-Dayhoff
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 🚀 Get Started Quickly
+
+### Option 1: Run Complete Pipeline (Recommended)
+
+Execute the entire EmbedDiff-Dayhoff pipeline with one command:
+
+```bash
+# Activate your environment first
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Run the complete pipeline
+python run_embeddiff_pipeline_dayhoff.py
+```
+
+**What this does:**
+- ✅ Generates Dayhoff embeddings from your protein sequences
+- ✅ Trains the latent diffusion model
+- ✅ Samples synthetic embeddings
+- ✅ Trains the transformer decoder
+- ✅ Decodes sequences and runs all analyses
+- ✅ Generates comprehensive HTML report
+
+**Expected time:** 2-4 hours depending on your hardware
+
+### Option 2: Run with Custom Skip Options
+
+Skip specific steps if you want to resume from a certain point:
+
+```bash
+# Skip embedding generation (if you already have embeddings)
+python run_embeddiff_pipeline_dayhoff.py --skip dayhoff
+
+# Skip BLAST analysis (if you don't have BLAST+ installed)
+python run_embeddiff_pipeline_dayhoff.py --skip blast
+
+# Skip multiple steps
+python run_embeddiff_pipeline_dayhoff.py --skip dayhoff tsne diffusion
+
+# Available skip options: dayhoff, tsne, diffusion, sample, decoder_data, decoder_train, decode, tsne_overlay, cosine, entropy, blast, html
+```
+
+### Option 3: Step-by-Step Execution
+
+Run individual components for debugging or customization:
+
+```bash
+# Step 1: Generate Dayhoff embeddings
+python utils/dayhoff_embedder.py --input data/curated_thioredoxin_reductase.fasta --output embeddings/dayhoff_embeddings.npy
+
+# Step 2: Visualize real embeddings
+python scripts/plot_tsne_by_domain_dayhoff.py
+
+# Step 3: Train diffusion model
+python scripts/train_embeddiff_dayhoff.py
+
+# Step 4: Sample synthetic embeddings
+python scripts/sample_embeddings_dayhoff.py
+
+# Step 5: Build decoder dataset
+python scripts/build_decoder_dataset_dayhoff.py
+
+# Step 6: Train transformer decoder
+python scripts/train_transformer_dayhoff.py
+
+# Step 7: Decode to sequences
+python scripts/transformer_decode_dayhoff.py
+
+# Step 8: Generate HTML report
+python scripts/generate_dayhoff_report.py
+```
+
+### 🎯 Quick Test Run
+
+Want to test the pipeline quickly? Use a smaller dataset:
+
+```bash
+# Create a small test dataset
+head -20 data/curated_thioredoxin_reductase.fasta > data/test_dataset.fasta
+
+# Run pipeline on test data
+python utils/dayhoff_embedder.py --input data/test_dataset.fasta --output embeddings/test_embeddings.npy
+python scripts/plot_tsne_by_domain_dayhoff.py
+```
+
+### 📊 View Results
+
+After running the pipeline, view your results:
+
+```bash
+# Open the comprehensive HTML report
+open embeddiff_dayhoff_summary_report.html
+
+# Or view individual figures
+ls figures/
+```
+
+---
+
+## 📊 Expected Outputs
+
+After running the complete pipeline, you'll have:
+
+### 🗂️ Generated Files
+
+- **`embeddings/dayhoff_embeddings.npy`** - Real protein embeddings (1280D)
+- **`embeddings/sampled_dayhoff_embeddings.npy`** - Synthetic embeddings
+- **`data/decoded_embeddiff_dayhoff.fasta`** - 240 generated protein sequences
+- **`checkpoints/`** - Trained model checkpoints
+- **`figures/`** - 13 comprehensive analysis plots
+- **`embeddiff_dayhoff_summary_report.html`** - Complete results report
+
+### 📈 Key Metrics You'll See
+
+- **Sequence Generation**: 240 high-quality synthetic proteins
+- **Identity Range**: 32-68% similarity to real sequences
+- **Classification Accuracy**: 92% domain prediction performance
+- **Training Progress**: Loss curves and convergence metrics
+- **Quality Validation**: Entropy, identity, and BLAST analysis
+
+### 🔍 What Each Figure Shows
+
+1. **Domain Separation** - How well Dayhoff separates biological domains
+2. **Classification Performance** - Logistic regression accuracy metrics
+3. **Diffusion Training** - Model convergence and loss reduction
+4. **Generated Embeddings** - Synthetic vs. real embedding comparison
+5. **Sequence Quality** - Identity distributions and entropy analysis
+6. **Similarity Analysis** - Cosine similarity between sequence types
+
+---
+
+## 📈 Key Results & Visualizations
+
+### 1. Domain Separation (Figure 1)
+- Clear separation of bacteria, fungi, and archaea in embedding space
+- Demonstrates Dayhoff model's ability to capture biological relationships
+
+### 2. Classification Performance (Figures 2-3)
+- **92% overall accuracy** in domain classification
+- Strong per-class recall: Archaea (89%), Bacteria (84%), Fungi (99%)
+
+### 3. Diffusion Training (Figure 4)
+- Successful training with cosine noise schedule
+- Loss reduction from 12.66 to 10.79 (15% improvement)
+
+### 4. Generated Embeddings (Figure 5)
+- Synthetic embeddings overlap with real protein distributions
+- Maintains biological plausibility across domains
+
+### 5. Sequence Quality (Figures 10-11)
+- **Identity range**: 32-68% (most around 55-65%)
+- **Entropy threshold**: All sequences above 2.8 Shannon entropy
+- **Quality filtering**: Comprehensive validation of generated sequences
+
+### 6. Similarity Analysis (Figures 7-9)
+- High cosine similarity between real and generated sequences
+- Generated sequences show internal coherence and diversity
+
+## 🔬 Technical Details
+
+### Model Specifications
+
+- **Dayhoff Model**: `microsoft/Dayhoff-3b-UR90` (3B parameters, 1280D embeddings)
+- **Diffusion Model**: MLP noise predictor with 1000 timesteps
+- **Transformer Decoder**: 4 layers, 512 embedding dims, 8 attention heads
+- **Training**: Adam optimizer, learning rate 1e-4, batch size 32
+
+### Key Innovations
+
+1. **Cosine Noise Schedule**: Smoother noise addition for better training stability
+2. **[-1,1] Normalization**: Improved embedding scaling for diffusion models
+3. **Dynamic Timestep Scaling**: Adaptive normalization based on total timesteps
+4. **CPU Compatibility**: Mamba kernel disabling for broad accessibility
+
+## 📊 Performance Metrics
+
+| Metric | Value | Description |
+|--------|-------|-------------|
+| **Generated Sequences** | 240 | High-quality synthetic proteins |
+| **Sequence Identity** | 32-68% | Range of similarity to real sequences |
+| **Classification Accuracy** | 92% | Domain prediction performance |
+| **Training Epochs** | 34 | Transformer decoder training |
+| **Loss Improvement** | 15% | Diffusion model training progress |
+
+## 🎯 Applications
+
+- **Drug Discovery**: Generate novel protein therapeutics
+- **Protein Engineering**: Design proteins with specific functions
+- **Evolutionary Studies**: Understand protein sequence space
+- **Bioinformatics Research**: Explore protein sequence relationships
+
+## 🔬 Ablation Study Methodology
+
+### Comparing Dayhoff vs ESM-2 Results
+
+This repository enables direct comparison with the [original EmbedDiff ESM-2 pipeline](https://github.com/mgarsamo/EmbedDiff):
+
+1. **Run both pipelines** on the same input dataset
+2. **Compare key metrics**:
+   - Sequence identity distributions
+   - Training loss curves
+   - t-SNE embedding distributions
+   - Classification performance
+   - BLAST validation results
+
+3. **Evaluate differences** in:
+   - **Embedding quality**: Domain separation and biological relationships
+   - **Generation diversity**: Novelty vs. biological plausibility
+   - **Training stability**: Convergence and loss patterns
+   - **Computational efficiency**: Model size and inference speed
+
+### Key Research Questions
+
+- **Does Dayhoff's UniRef clustering improve domain-aware generation?**
+- **How do 1280D Dayhoff embeddings compare to ESM-2's 1280D?**
+- **Which embedding model produces more biologically plausible sequences?**
+- **What are the trade-offs between model size and generation quality?**
+
+### Reproducing the Comparison
+
+```bash
+# ESM-2 baseline (from original repository)
+git clone https://github.com/mgarsamo/EmbedDiff.git
+cd EmbedDiff
+python run_embeddiff_pipeline.py
+
+# Dayhoff ablation (current repository)
+git clone https://github.com/mgarsamo/EmbedDiff-Dayhoff.git
+cd EmbedDiff-Dayhoff
+python run_embeddiff_pipeline_dayhoff.py
+
+# Compare results in respective HTML reports
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please feel free to:
+- Submit issues and feature requests
+- Contribute code improvements
+- Share research applications and results
+- Improve documentation
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Microsoft Research** for the Dayhoff protein language models
+- **Hugging Face** for the transformers library
+- **PyTorch** team for the deep learning framework
+- **Bioinformatics community** for protein analysis tools
+
+## 📞 Contact
+
+- **GitHub**: [@mgarsamo](https://github.com/mgarsamo)
+- **Repository**: [EmbedDiff-Dayhoff](https://github.com/mgarsamo/EmbedDiff-Dayhoff)
+
+---
+
+**Last Updated**: August 28, 2025  
+**Pipeline Status**: ✅ Complete and Fully Functional  
+**Results**: Available in `embeddiff_dayhoff_summary_report.html`
+
+
