@@ -4,6 +4,18 @@
 
 A comprehensive implementation of the EmbedDiff pipeline for generating novel protein sequences using Dayhoff embeddings and latent diffusion models.
 
+## 📋 Quick Navigation
+
+[**📊 HTML Report**](https://mgarsamo.github.io/EmbedDiff-Dayhoff/) | [**🚀 Run EmbedDiff-Dayhoff**](#-get-started-quickly) | [**📄 License: MIT**](LICENSE)
+
+---
+
+**EmbedDiff-Dayhoff** is a modular pipeline for de novo protein sequence generation that combines pretrained Microsoft Dayhoff embeddings, a latent diffusion model, and Transformer-based decoding. It enables efficient exploration of the protein sequence landscape—generating novel sequences that preserve evolutionary plausibility, functional diversity, and foldability, without requiring structural supervision.
+
+This repository implements an ablation study comparing Dayhoff vs ESM-2 embeddings for protein generation.
+
+---
+
 ## 🔬 About This Study
 
 **EmbedDiff-Dayhoff** is an **ablation study** that extends the original [EmbedDiff pipeline](https://github.com/mgarsamo/EmbedDiff) by swapping the embedding backbone from **ESM-2** to **Microsoft Dayhoff Atlas**. 
