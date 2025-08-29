@@ -6,7 +6,7 @@ A comprehensive implementation of the EmbedDiff pipeline for generating novel pr
 
 ## 📋 Quick Navigation
 
-[**📊 HTML Report**](https://mgarsamo.github.io/EmbedDiff-Dayhoff/) | [**🚀 Run EmbedDiff-Dayhoff**](#-get-started-quickly) | [**📄 License: MIT**](LICENSE)
+[**📊 HTML Report**](https://mgarsamo.github.io/EmbedDiff-Dayhoff/embeddiff_dayhoff_summary_report.html) | [**🚀 Run EmbedDiff-Dayhoff**](#-get-started-quickly) | [**📄 License: MIT**](LICENSE)
 
 ---
 
