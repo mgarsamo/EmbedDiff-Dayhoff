@@ -96,6 +96,27 @@ def main():
         skip_steps, "blast"
     )
 
+    # === Perplexity Analysis ===
+    if "perplexity" in skip_steps:
+        print("⏭️ Skipping: Step 7e - Perplexity Scoring Analysis (Dayhoff)")
+    else:
+        print("\n✅ Step 7e: Perplexity Scoring Analysis (Dayhoff)")
+        run_command(
+            "python scripts/perplexity_scoring.py",
+            "Step 7e: Perplexity Scoring Analysis (Dayhoff)",
+            skip_steps, "perplexity"
+        )
+
+    if "perplexity_plots" in skip_steps:
+        print("⏭️ Skipping: Step 7f - Perplexity Plotting (Dayhoff)")
+    else:
+        print("\n✅ Step 7f: Perplexity Plotting (Dayhoff)")
+        run_command(
+            "python scripts/plot_perplexity_comparison.py",
+            "Step 7f: Perplexity Plotting (Dayhoff)",
+            skip_steps, "perplexity_plots"
+        )
+
     # === Final HTML Report ===
     if "html" in skip_steps:
         print("⏭️ Skipping: Step 8 - Generate HTML Summary Report (Dayhoff)")

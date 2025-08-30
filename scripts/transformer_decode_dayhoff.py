@@ -34,7 +34,7 @@ ENTROPY_THRESHOLD = 0.7
 MIN_IDENTITY = 30.0
 MAX_IDENTITY = 85.0
 N_RETRIES = 3
-STOCHASTIC_RATIO = 0.4  # 40% sampling from generated logits
+STOCHASTIC_RATIO = 0.6  # 60% sampling from generated logits
 
 # === AA ID map ===
 id_to_aa = {

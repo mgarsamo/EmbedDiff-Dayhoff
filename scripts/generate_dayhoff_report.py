@@ -22,7 +22,10 @@ def generate_html_report(output_path="embeddiff_dayhoff_summary_report.html"):
         "fig5b_identity_histogram_dayhoff.png",
         "fig5c_entropy_scatter_dayhoff.png",
         "fig5d_all_histograms_dayhoff.png",
-        "fig5f_tsne_domain_overlay_dayhoff.png"
+        "fig5f_tsne_domain_overlay_dayhoff.png",
+        "perplexity_comprehensive_comparison.png",
+        "perplexity_boxplot_dayhoff.png",
+        "perplexity_log_boxplot_dayhoff.png"
     ]
 
     figures_dir = "figures"
@@ -127,7 +130,10 @@ def generate_html_report(output_path="embeddiff_dayhoff_summary_report.html"):
                     "fig5b_identity_histogram_dayhoff.png": "Figure 10: Identity Histogram (Dayhoff)",
                     "fig5c_entropy_scatter_dayhoff.png": "Figure 11: Entropy vs Identity Scatter (Dayhoff)",
                     "fig5d_all_histograms_dayhoff.png": "Figure 12: All Histograms (Dayhoff)",
-                    "fig5f_tsne_domain_overlay_dayhoff.png": "Figure 13: t-SNE Domain Overlay (Dayhoff)"
+                    "fig5f_tsne_domain_overlay_dayhoff.png": "Figure 13: t-SNE Domain Overlay (Dayhoff)",
+                    "perplexity_comprehensive_comparison.png": "Figure 14: Perplexity Comprehensive Comparison (Dayhoff)",
+                    "perplexity_boxplot_dayhoff.png": "Figure 15: Perplexity Boxplot (Dayhoff)",
+                    "perplexity_log_boxplot_dayhoff.png": "Figure 16: Perplexity Log-Scale Boxplot (Dayhoff)"
                 }
                 
                 title = title_map.get(plot, plot.replace("fig", "Figure ").replace("_", " ").replace(".png", "").title())

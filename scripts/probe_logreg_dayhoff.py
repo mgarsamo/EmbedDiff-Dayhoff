@@ -46,32 +46,92 @@ acc = accuracy_score(y_test, y_pred)
 print(f"[RESULT] Logistic Regression accuracy: {acc:.4f}")
 print(classification_report(y_test, y_pred, target_names=labels.cat.categories))
 
-# === Confusion Matrix ===
+# === Create detailed results table ===
+report = classification_report(y_test, y_pred, target_names=labels.cat.categories, output_dict=True)
+results_df = pd.DataFrame(report).transpose()
+results_df = results_df.round(4)
+results_df = results_df.drop('accuracy', errors='ignore')  # Remove accuracy row for cleaner table
+
+# Save results table to CSV
+table_path = os.path.join(FIGURE_DIR, "logreg_classification_results_dayhoff.csv")
+results_df.to_csv(table_path)
+print(f"[TABLE] Classification results saved to {table_path}")
+
+# === Confusion Matrix (Counts) ===
 cm = confusion_matrix(y_test, y_pred)
-plt.figure(figsize=(6, 5))
+plt.figure(figsize=(8, 6))
+
+# Create subplot for counts
+plt.subplot(1, 2, 1)
 sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
             xticklabels=labels.cat.categories,
             yticklabels=labels.cat.categories)
 plt.xlabel("Predicted Label")
 plt.ylabel("True Label")
-plt.title("Logistic Regression Confusion Matrix (Dayhoff)")
+plt.title("Confusion Matrix (Counts)")
+
+# === Confusion Matrix (Percentages) ===
+cm_percent = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
+plt.subplot(1, 2, 2)
+sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues",
+            xticklabels=labels.cat.categories,
+            yticklabels=labels.cat.categories)
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
+plt.title("Confusion Matrix (Percentages)")
+
 plt.tight_layout()
 cm_path = os.path.join(FIGURE_DIR, "logreg_confusion_matrix_dayhoff.png")
-plt.savefig(cm_path, dpi=300)
-print(f"[FIGURE] Confusion matrix saved to {cm_path}")
+plt.savefig(cm_path, dpi=300, bbox_inches='tight')
+print(f"[FIGURE] Confusion matrices saved to {cm_path}")
 plt.close()
 
-# === Accuracy Bar Plot ===
-report = classification_report(y_test, y_pred, target_names=labels.cat.categories, output_dict=True)
+# === Accuracy Bar Plot (Publication Quality) ===
 accs = [report[c]['recall'] for c in labels.cat.categories]
+
+# Set up publication-quality figure
 plt.figure(figsize=(6, 4))
-sns.barplot(x=list(labels.cat.categories), y=accs, palette="Set2")
-plt.ylim(0, 1)
-plt.ylabel("Recall (Accuracy)")
-plt.xlabel("Class")
-plt.title("Logistic Regression Per-Class Recall (Dayhoff)")
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.linewidth'] = 1.2
+plt.rcParams['xtick.major.width'] = 1.2
+plt.rcParams['ytick.major.width'] = 1.2
+
+# Create bar plot with same colors as ESM-2 version
+bars = plt.bar(range(len(labels.cat.categories)), accs, 
+               color=['#FF6B6B', '#4ECDC4', '#45B7D1'],
+               edgecolor='black', linewidth=0.8, alpha=0.8)
+
+# Customize axes
+plt.ylim(0, 1.05)
+plt.ylabel("Recall", fontsize=14, fontweight='bold')
+plt.xlabel("Class", fontsize=14, fontweight='bold')
+plt.title("Logistic Regression Per-Class Recall (Dayhoff)", fontsize=16, fontweight='bold')
+plt.xticks(range(len(labels.cat.categories)), labels.cat.categories, 
+           fontsize=12, rotation=0)
+
+# Add value labels on bars with proper formatting
+for i, (bar, acc) in enumerate(zip(bars, accs)):
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02, 
+             f'{acc:.3f}', ha='center', va='bottom', 
+             fontsize=11, fontweight='bold')
+
+# Customize grid and spines
+plt.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.8)
+plt.gca().spines['top'].set_visible(False)
+plt.gca().spines['right'].set_visible(False)
+
+# Adjust layout and save
 plt.tight_layout()
 bar_path = os.path.join(FIGURE_DIR, "logreg_per_class_recall_dayhoff.png")
-plt.savefig(bar_path, dpi=300)
-print(f"[FIGURE] Per-class recall barplot saved to {bar_path}")
+plt.savefig(bar_path, dpi=300, bbox_inches='tight', facecolor='white')
+print(f"[FIGURE] Publication-quality bar plot saved to {bar_path}")
 plt.close()
+
+# === Print summary statistics ===
+print("\n" + "="*60)
+print("CLASSIFICATION RESULTS SUMMARY")
+print("="*60)
+print(f"Overall Accuracy: {acc:.4f}")
+print(f"Macro Average F1-Score: {results_df.loc['macro avg', 'f1-score']:.4f}")
+print(f"Weighted Average F1-Score: {results_df.loc['weighted avg', 'f1-score']:.4f}")
+print("="*60)
